@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("androidx.room")
 }
 
 android {
@@ -37,6 +38,10 @@ android {
     buildFeatures {
         compose = true
     }
+
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
 }
 
 dependencies {
@@ -56,4 +61,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // Jetpack Room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
 }
