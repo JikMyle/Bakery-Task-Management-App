@@ -1,11 +1,14 @@
-package com.example.bakerytaskmanagementapp.data.task
+package com.example.bakerytaskmanagementapp.data.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
+import com.example.bakerytaskmanagementapp.data.model.TaskWithAssignedStaff
+import com.example.bakerytaskmanagementapp.data.model.Task
 
 @Dao
 interface TaskDao {
@@ -22,5 +25,13 @@ interface TaskDao {
     fun getAllTasks(): List<Task>
 
     @Query("SELECT * FROM task WHERE id = :id")
-    fun getTaskById(id: Int): Task
+    fun getTask(id: Int): Task
+
+    @Transaction
+    @Query("SELECT * FROM task")
+    fun getAllTasksWithAssignedStaff(): List<TaskWithAssignedStaff>
+
+    @Transaction
+    @Query("SELECT * FROM task WHERE id = :id")
+    fun getTaskWithAssignedStaff(id: Int): TaskWithAssignedStaff
 }

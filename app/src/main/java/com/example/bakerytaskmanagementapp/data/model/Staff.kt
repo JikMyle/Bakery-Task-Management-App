@@ -1,4 +1,4 @@
-package com.example.bakerytaskmanagementapp.data.staff
+package com.example.bakerytaskmanagementapp.data.model
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
