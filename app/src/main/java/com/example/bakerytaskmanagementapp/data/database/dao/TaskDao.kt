@@ -9,29 +9,30 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.example.bakerytaskmanagementapp.data.database.model.TaskWithAssignedStaff
 import com.example.bakerytaskmanagementapp.data.database.model.Task
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TaskDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun addTask(vararg task: Task)
+    suspend fun addTask(vararg task: Task)
 
     @Update
-    fun updateTask(vararg task: Task)
+    suspend fun updateTask(vararg task: Task)
 
     @Delete
-    fun deleteTask(vararg task: Task)
+    suspend fun deleteTask(vararg task: Task)
 
     @Query("SELECT * FROM task")
-    fun getAllTasks(): List<Task>
+    fun getAllTasks(): Flow<List<Task>>
 
     @Query("SELECT * FROM task WHERE id = :id")
-    fun getTask(id: Int): Task
+    suspend fun getTask(id: Int): Task
 
     @Transaction
     @Query("SELECT * FROM task")
-    fun getAllTasksWithAssignedStaff(): List<TaskWithAssignedStaff>
+    fun getAllTasksWithAssignedStaff(): Flow<List<TaskWithAssignedStaff>>
 
     @Transaction
     @Query("SELECT * FROM task WHERE id = :id")
-    fun getTaskWithAssignedStaff(id: Int): TaskWithAssignedStaff
+    suspend fun getTaskWithAssignedStaff(id: Int): TaskWithAssignedStaff
 }

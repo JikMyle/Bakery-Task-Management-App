@@ -7,21 +7,22 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.bakerytaskmanagementapp.data.database.model.InventoryItem
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface InventoryItemDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun addItem(vararg inventoryItem: InventoryItem)
+    suspend fun addItem(vararg inventoryItem: InventoryItem)
 
     @Delete
-    fun deleteItem(vararg inventoryItem: InventoryItem)
+    suspend fun deleteItem(vararg inventoryItem: InventoryItem)
 
     @Update
-    fun updateItem(vararg inventoryItem: InventoryItem)
+    suspend fun updateItem(vararg inventoryItem: InventoryItem)
 
     @Query("SELECT * FROM inventory_item")
-    fun getAllItems(): List<InventoryItem>
+    fun getAllItems(): Flow<List<InventoryItem>>
 
     @Query("SELECT * FROM inventory_item WHERE id = :id")
-    fun getItem(id: Int): InventoryItem
+    suspend fun getItem(id: Int): InventoryItem
 }

@@ -9,8 +9,8 @@ import com.example.bakerytaskmanagementapp.data.database.model.StaffTaskAssignme
 @Dao
 interface StaffTaskAssignmentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun assignStaffToTask(vararg staffTaskAssignment: StaffTaskAssignment)
+    suspend fun assignStaffToTask(vararg staffTaskAssignment: StaffTaskAssignment)
 
     @Delete
-    fun removeStaffFromTask(vararg staffTaskAssignment: StaffTaskAssignment)
+    suspend fun removeStaffFromTask(vararg staffTaskAssignment: StaffTaskAssignment)
 }
