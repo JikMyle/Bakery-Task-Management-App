@@ -1,4 +1,4 @@
-package com.example.bakerytaskmanagementapp.data.dao
+package com.example.bakerytaskmanagementapp.data.database.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -6,7 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import com.example.bakerytaskmanagementapp.data.model.InventoryItem
+import com.example.bakerytaskmanagementapp.data.database.model.InventoryItem
 
 @Dao
 interface InventoryItemDao {

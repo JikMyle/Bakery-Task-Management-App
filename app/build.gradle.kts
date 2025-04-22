@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("androidx.room")
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -42,6 +44,11 @@ android {
     room {
         schemaDirectory("$projectDir/schemas")
     }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
@@ -65,4 +72,8 @@ dependencies {
     // Jetpack Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp("com.google.dagger:hilt-android-compiler:2.56.1")
 }

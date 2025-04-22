@@ -1,4 +1,4 @@
-package com.example.bakerytaskmanagementapp.data.dao
+package com.example.bakerytaskmanagementapp.data.database.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -7,8 +7,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import com.example.bakerytaskmanagementapp.data.model.TaskWithAssignedStaff
-import com.example.bakerytaskmanagementapp.data.model.Task
+import com.example.bakerytaskmanagementapp.data.database.model.TaskWithAssignedStaff
+import com.example.bakerytaskmanagementapp.data.database.model.Task
 
 @Dao
 interface TaskDao {

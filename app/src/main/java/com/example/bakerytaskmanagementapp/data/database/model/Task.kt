@@ -1,4 +1,4 @@
-package com.example.bakerytaskmanagementapp.data.model
+package com.example.bakerytaskmanagementapp.data.database.model
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
