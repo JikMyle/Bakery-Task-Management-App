@@ -24,5 +24,5 @@ interface InventoryItemDao {
     fun getAllItems(): Flow<List<InventoryItem>>
 
     @Query("SELECT * FROM inventory_item WHERE id = :id")
-    suspend fun getItem(id: Int): InventoryItem
+    fun getItem(id: Int): Flow<InventoryItem?>
 }

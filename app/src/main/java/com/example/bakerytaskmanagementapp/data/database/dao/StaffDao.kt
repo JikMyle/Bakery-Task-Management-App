@@ -24,9 +24,9 @@ interface StaffDao {
     fun getAllStaff(): Flow<List<Staff>>
 
     @Query("Select * FROM staff WHERE id = :id")
-    suspend fun getStaffById(id: Int): Staff
+    fun getStaffById(id: Int): Flow<Staff?>
 
     @Query("Select * FROM staff WHERE first_name LIKE :first " +
             "AND last_name LIKE :last")
-    suspend fun getStaffByName(first: String, last: String): Staff
+    suspend fun getStaffByName(first: String, last: String): Staff?
 }
