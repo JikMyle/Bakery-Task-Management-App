@@ -4,9 +4,11 @@ import android.content.Context
 import androidx.room.Room
 import com.example.bakerytaskmanagementapp.data.database.BTMDatabase
 import com.example.bakerytaskmanagementapp.data.database.dao.InventoryItemDao
+import com.example.bakerytaskmanagementapp.data.database.dao.RoomTransactionRunner
 import com.example.bakerytaskmanagementapp.data.database.dao.StaffDao
 import com.example.bakerytaskmanagementapp.data.database.dao.StaffTaskAssignmentDao
 import com.example.bakerytaskmanagementapp.data.database.dao.TaskDao
+import com.example.bakerytaskmanagementapp.data.database.dao.TransactionRunner
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -49,4 +51,11 @@ object DataDiModule {
     fun provideInventoryItemDao(
         database: BTMDatabase
     ): InventoryItemDao = database.inventoryItemDao()
+
+    @Provides
+    @Singleton
+    fun provideTransactionRunner(
+        db: BTMDatabase
+    ): TransactionRunner = RoomTransactionRunner(db)
+
 }
