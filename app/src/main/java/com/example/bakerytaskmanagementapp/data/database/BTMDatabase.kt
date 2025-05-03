@@ -18,7 +18,7 @@ import com.example.bakerytaskmanagementapp.data.database.model.Task
         StaffTaskAssignment::class,
         InventoryItem::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class BTMDatabase: RoomDatabase() {

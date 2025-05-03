@@ -20,5 +20,6 @@ data class Task(
     @ColumnInfo(name = "date_created") val dateCreated: Long,
     @ColumnInfo(name = "date_deadline") val dateDeadline: Long?,
     @ColumnInfo(name = "date_last_updated") val dateLastUpdated: Long,
-    @ColumnInfo(name = "date_deleted") val dateDeleted: Long?
+    @ColumnInfo(name = "date_deleted") val dateDeleted: Long?,
+    @ColumnInfo(name = "date_completed") val dateCompleted: Long?
 )
