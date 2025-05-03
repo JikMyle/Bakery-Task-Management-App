@@ -9,6 +9,12 @@ import com.example.bakerytaskmanagementapp.data.database.dao.StaffDao
 import com.example.bakerytaskmanagementapp.data.database.dao.StaffTaskAssignmentDao
 import com.example.bakerytaskmanagementapp.data.database.dao.TaskDao
 import com.example.bakerytaskmanagementapp.data.database.dao.TransactionRunner
+import com.example.bakerytaskmanagementapp.data.database.repository.InventoryItemStore
+import com.example.bakerytaskmanagementapp.data.database.repository.LocalInventoryItemStore
+import com.example.bakerytaskmanagementapp.data.database.repository.LocalStaffStore
+import com.example.bakerytaskmanagementapp.data.database.repository.LocalTaskStore
+import com.example.bakerytaskmanagementapp.data.database.repository.StaffStore
+import com.example.bakerytaskmanagementapp.data.database.repository.TaskStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -58,4 +64,31 @@ object DataDiModule {
         db: BTMDatabase
     ): TransactionRunner = RoomTransactionRunner(db)
 
+    @Provides
+    @Singleton
+    fun provideTaskStore(
+        taskDao: TaskDao,
+        staffTaskAssignmentDao: StaffTaskAssignmentDao,
+        transactionRunner: TransactionRunner,
+    ): TaskStore = LocalTaskStore(
+        taskDao,
+        staffTaskAssignmentDao,
+        transactionRunner
+    )
+
+    @Provides
+    @Singleton
+    fun provideStaffStore(
+        staffDao: StaffDao
+    ): StaffStore = LocalStaffStore(
+        staffDao,
+    )
+
+    @Provides
+    @Singleton
+    fun provideInventoryItemStore(
+        inventoryItemDao: InventoryItemDao
+    ): InventoryItemStore = LocalInventoryItemStore(
+        inventoryItemDao
+    )
 }

@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.Junction
 import androidx.room.Relation
 
@@ -23,7 +24,7 @@ import androidx.room.Relation
             childColumns = ["staff_id"],
             onDelete = ForeignKey.CASCADE,
         )
-    ]
+    ],
 )
 data class StaffTaskAssignment(
     @ColumnInfo(name = "task_id") val taskId: Int,
@@ -33,9 +34,12 @@ data class StaffTaskAssignment(
 data class TaskWithAssignedStaff(
     @Embedded val task: Task,
     @Relation(
-        parentColumn = "task_id",
-        entityColumn = "staff_id",
-        associateBy = Junction(StaffTaskAssignment::class)
+        parentColumn = "id",
+        entityColumn = "id",
+        associateBy = Junction(
+            StaffTaskAssignment::class,
+            "task_id",
+            "staff_id")
     )
     val assignedStaff: List<Staff>
 )
