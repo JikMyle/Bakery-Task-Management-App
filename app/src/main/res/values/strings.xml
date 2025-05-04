@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Bakery Task Management App</string>
+
+    <string name="manage_staff">Manage Staff</string>
+    <string name="add_staff">Add Staff</string>
+    <string name="add_staff_button_content_description">Add Staff Button</string>
+
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
 </resources>

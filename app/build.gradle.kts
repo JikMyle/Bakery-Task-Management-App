@@ -39,6 +39,7 @@ android {
     }
     buildFeatures {
         compose = true
+        dataBinding = true
     }
 
     room {
@@ -53,6 +54,10 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
+    // Views Dependencies
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.recyclerview)
+
     // Testing Dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -65,6 +70,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui.text.google.fonts)
 
     // Jetpack Room Dependencies
     implementation(libs.androidx.room.runtime)
