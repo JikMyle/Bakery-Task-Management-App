@@ -8,12 +8,15 @@ import com.example.bakerytaskmanagementapp.data.database.dao.RoomTransactionRunn
 import com.example.bakerytaskmanagementapp.data.database.dao.StaffDao
 import com.example.bakerytaskmanagementapp.data.database.dao.StaffTaskAssignmentDao
 import com.example.bakerytaskmanagementapp.data.database.dao.TaskDao
+import com.example.bakerytaskmanagementapp.data.database.dao.TaskHistoryDao
 import com.example.bakerytaskmanagementapp.data.database.dao.TransactionRunner
 import com.example.bakerytaskmanagementapp.data.database.repository.InventoryItemStore
 import com.example.bakerytaskmanagementapp.data.database.repository.LocalInventoryItemStore
 import com.example.bakerytaskmanagementapp.data.database.repository.LocalStaffStore
+import com.example.bakerytaskmanagementapp.data.database.repository.LocalTaskHistoryStore
 import com.example.bakerytaskmanagementapp.data.database.repository.LocalTaskStore
 import com.example.bakerytaskmanagementapp.data.database.repository.StaffStore
+import com.example.bakerytaskmanagementapp.data.database.repository.TaskHistoryStore
 import com.example.bakerytaskmanagementapp.data.database.repository.TaskStore
 import dagger.Module
 import dagger.Provides
@@ -31,6 +34,7 @@ object DataDiModule {
         @ApplicationContext context: Context
     ): BTMDatabase =
         Room.databaseBuilder(context, BTMDatabase::class.java, "btm_database")
+            .createFromAsset("btm_database.db")
             .fallbackToDestructiveMigration(true)
             .build()
 
@@ -60,6 +64,12 @@ object DataDiModule {
 
     @Provides
     @Singleton
+    fun provideTaskHistoryDao(
+        database: BTMDatabase
+    ): TaskHistoryDao = database.taskHistoryDao()
+
+    @Provides
+    @Singleton
     fun provideTransactionRunner(
         db: BTMDatabase
     ): TransactionRunner = RoomTransactionRunner(db)
@@ -69,10 +79,12 @@ object DataDiModule {
     fun provideTaskStore(
         taskDao: TaskDao,
         staffTaskAssignmentDao: StaffTaskAssignmentDao,
+        taskHistoryDao: TaskHistoryDao,
         transactionRunner: TransactionRunner,
     ): TaskStore = LocalTaskStore(
         taskDao,
         staffTaskAssignmentDao,
+        taskHistoryDao,
         transactionRunner
     )
 
@@ -90,5 +102,17 @@ object DataDiModule {
         inventoryItemDao: InventoryItemDao
     ): InventoryItemStore = LocalInventoryItemStore(
         inventoryItemDao
+    )
+
+    @Provides
+    @Singleton
+    fun provideTaskHistoryStore(
+        taskDao: TaskDao,
+        taskHistoryDao: TaskHistoryDao,
+        transactionRunner: TransactionRunner
+    ): TaskHistoryStore = LocalTaskHistoryStore(
+        taskDao,
+        taskHistoryDao,
+        transactionRunner
     )
 }

@@ -2,12 +2,17 @@ package com.example.bakerytaskmanagementapp.data.database.repository
 
 import com.example.bakerytaskmanagementapp.data.database.dao.StaffTaskAssignmentDao
 import com.example.bakerytaskmanagementapp.data.database.dao.TaskDao
+import com.example.bakerytaskmanagementapp.data.database.dao.TaskHistoryDao
 import com.example.bakerytaskmanagementapp.data.database.dao.TransactionRunner
 import com.example.bakerytaskmanagementapp.data.database.model.StaffTaskAssignment
 import com.example.bakerytaskmanagementapp.data.database.model.Task
+import com.example.bakerytaskmanagementapp.data.database.model.TaskHistory
+import com.example.bakerytaskmanagementapp.data.database.model.TaskHistoryAction
+import com.example.bakerytaskmanagementapp.data.database.model.TaskStatusType
 import com.example.bakerytaskmanagementapp.data.database.model.TaskWithAssignedStaff
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import java.util.Date
 import javax.inject.Inject
 
 interface TaskStore {
@@ -20,6 +25,8 @@ interface TaskStore {
     suspend fun addTask(vararg taskWithAssignedStaff: TaskWithAssignedStaff)
     suspend fun updateTask(vararg taskWithAssignedStaff: TaskWithAssignedStaff)
     suspend fun deleteTask(vararg taskWithAssignedStaff: TaskWithAssignedStaff)
+
+    fun generateTaskHistoryItem(taskId: Int, title: String, actionDone: Int): TaskHistory
 }
 
 /**
@@ -28,6 +35,7 @@ interface TaskStore {
 class LocalTaskStore @Inject constructor(
     private val taskDao: TaskDao,
     private val staffTaskAssignmentDao: StaffTaskAssignmentDao,
+    private val taskHistoryDao: TaskHistoryDao,
     private val transactionRunner: TransactionRunner
 ): TaskStore {
     override fun getAllTasks(): Flow<List<Task>> = taskDao.getAllTasks()
@@ -42,11 +50,16 @@ class LocalTaskStore @Inject constructor(
     override suspend fun addTask(vararg taskWithAssignedStaff: TaskWithAssignedStaff) {
         taskWithAssignedStaff.forEach {
             transactionRunner {
-                taskDao.addTask(it.task)    // Inserts task to table
+                val taskId = taskDao.addTask(it.task)    // Inserts task to table
+
+                // Inserts an item in the [TaskHistory]
+                taskHistoryDao.addToHistory(
+                    generateTaskHistoryItem(taskId[0].toInt(), it.task.title, TaskHistoryAction.CREATED)
+                )
 
                 it.assignedStaff.forEach { staff ->     // Assigns staff to task
                     staffTaskAssignmentDao.assignStaffToTask(
-                        StaffTaskAssignment(it.task.id, staff.id)
+                        StaffTaskAssignment(taskId[0].toInt(), staff.id)
                     )
                 }
             }
@@ -96,14 +109,46 @@ class LocalTaskStore @Inject constructor(
                         StaffTaskAssignment(it.task.id, staff.id)
                     )
                 }
+
+                // Inserts an item in the [TaskHistory]
+                taskHistoryDao.addToHistory(
+                    generateTaskHistoryItem(it.task.id, it.task.title, TaskHistoryAction.UPDATED)
+                )
             }
         }
     }
 
     override suspend fun deleteTask(vararg taskWithAssignedStaff: TaskWithAssignedStaff) {
         taskWithAssignedStaff.forEach {
-            taskDao.deleteTask(it.task)
+            val deletedTask = it.task.copy(
+                status = TaskStatusType.DELETED,
+                dateLastUpdated = Date(),
+                dateDeleted = Date()
+            )
+
+            transactionRunner {
+                // Task status is changed to DELETED instead of removing it from database
+                taskDao.updateTask(deletedTask)
+
+                // Inserts an item to [TaskHistory]
+                taskHistoryDao.addToHistory(
+                    generateTaskHistoryItem(it.task.id, it.task.title, TaskHistoryAction.DELETED)
+                )
+            }
         }
+    }
+
+    override fun generateTaskHistoryItem(
+        taskId: Int,
+        title: String,
+        actionDone: Int
+    ): TaskHistory {
+        return TaskHistory(
+            id = 0,
+            taskId = taskId,
+            actionDone = actionDone,
+            dateActionDone = Date(),
+        )
     }
 }
 

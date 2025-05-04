@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
+import java.util.Date
 
 @Entity(
     tableName = "task_history",
@@ -14,20 +15,13 @@ import androidx.room.PrimaryKey
             childColumns = ["task_id"],
             onDelete = ForeignKey.CASCADE,
         ),
-        ForeignKey(
-            entity = Staff::class,
-            parentColumns = ["title"],
-            childColumns = ["title"],
-            onDelete = ForeignKey.CASCADE,
-        )
     ],
 )
 data class TaskHistory(
     @PrimaryKey(autoGenerate = true) val id: Int,
     @ColumnInfo(name = "task_id") val taskId: Int,
-    @ColumnInfo(name = "title") val title: String,
     @ColumnInfo(name = "action_done") val actionDone: Int,
-    @ColumnInfo(name = "date_action_done") val dateActionDone: Long,
+    @ColumnInfo(name = "date_action_done") val dateActionDone: Date,
 )
 
 object TaskHistoryAction {
