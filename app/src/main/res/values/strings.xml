@@ -5,6 +5,12 @@
     <string name="add_staff">Add Staff</string>
     <string name="add_staff_button_content_description">Add Staff Button</string>
 
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+
     <string name="save">Save</string>
+    <string name="update">Update</string>
+    <string name="delete">Delete</string>
+    <string name="add">Add</string>
     <string name="cancel">Cancel</string>
 </resources>

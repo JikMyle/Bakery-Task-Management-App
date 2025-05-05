@@ -1,5 +1,6 @@
 package com.example.bakerytaskmanagementapp.ui.staff
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -25,8 +27,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,6 +40,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.bakerytaskmanagementapp.R
+import com.example.bakerytaskmanagementapp.data.database.OperationState
 import com.example.bakerytaskmanagementapp.data.database.model.Staff
 
 
@@ -42,7 +49,23 @@ fun StaffScreen(
     modifier: Modifier = Modifier,
     viewModel: StaffViewModel = hiltViewModel()
 ) {
-    val uiState = viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val uiState = viewModel.uiState.collectAsState()
+    val operationState by viewModel.operationState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(operationState) {
+        when (val state = operationState) {
+            is OperationState.Success -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+                viewModel.resetOperationState() // Clear after showing
+            }
+            is OperationState.Error -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+                viewModel.resetOperationState() // Clear after showing
+            }
+            else -> { /* No action needed */ }
+        }
+    }
 
     if(uiState.value.isStaffFormVisible) {
         StaffFormDialog(staffFormState = uiState.value.staffFormState)
@@ -55,23 +78,27 @@ fun StaffScreen(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(
-            modifier = Modifier,
-            text = stringResource(R.string.manage_staff),
-            fontSize = MaterialTheme.typography.displayMedium.fontSize,
-            fontWeight = FontWeight.Bold
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                modifier = Modifier,
+                text = stringResource(R.string.manage_staff),
+                fontSize = MaterialTheme.typography.displayMedium.fontSize,
+                fontWeight = FontWeight.Bold
+            )
 
-        AddStaffButton(onClick = {
-            viewModel.updateStaffFormState(StaffFormState())
-            viewModel.toggleStaffFormVisibility()
-        })
+            AddStaffButton(onClick = {
+                viewModel.toggleStaffFormVisibility(true)
+            })
+        }
 
         StaffList(
             modifier = Modifier.padding(top = 6.dp),
             staffList = uiState.value.staff,
-            onItemDeleteClick = {},
-            onItemEditClick = {}
+            onItemDeleteClick = viewModel::deleteStaff,
+            onItemEditClick = viewModel::editStaff
         )
     }
 }
@@ -152,7 +179,7 @@ private fun StaffListItem(
 
             Text(
                 text = "${staff.firstName} ${staff.lastName}",
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.bodyLarge,
             )
 
             // This [SPACER] is to separate the left and right contents
@@ -179,6 +206,10 @@ private fun StaffListItem(
     }
 }
 
+/**
+ * App currently does not support image profiles,
+ * thus only letters are used as avatars
+ */
 @Composable
 fun ProfileAvatar(
     modifier: Modifier = Modifier,
@@ -186,7 +217,7 @@ fun ProfileAvatar(
 ) {
     Box(
         modifier = modifier
-            .size(48.dp)
+            .size(36.dp)
             .background(
                 color = MaterialTheme.colorScheme.primary,
                 shape = MaterialTheme.shapes.extraLarge
@@ -195,8 +226,9 @@ fun ProfileAvatar(
         Text(
             modifier = Modifier.align(Alignment.Center),
             text = letter,
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onPrimary,
+            fontWeight = FontWeight.Bold
         )
     }
 }
@@ -207,46 +239,69 @@ private fun StaffFormDialog(
     staffFormState: StaffFormState
 ) {
     Dialog(
-        onDismissRequest = { }
+        onDismissRequest = staffFormState.onDismiss
     ) {
-        Card(modifier = modifier) {
+        Card(modifier = modifier.width(300.dp)) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "Add Staff",
-                    style = MaterialTheme.typography.titleLarge,
+                    text = if(staffFormState.isStaffFormEditing) "Edit Staff" else "Add Staff",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
                 )
 
                 OutlinedTextField(
                     value = staffFormState.firstName,
-                    onValueChange = { staffFormState.onValueChange() },
-                    label = { Text(text = "First Name") }
+                    onValueChange = {
+                        staffFormState.onValueChange(
+                            staffFormState.copy(
+                                firstName = it
+                            )
+                        ) },
+                    label = { Text(text = stringResource(R.string.first_name)) }
                 )
 
                 OutlinedTextField(
                     value = staffFormState.lastName,
-                    onValueChange = { staffFormState.onValueChange() },
-                    label = { Text(text = "Last Name")}
+                    onValueChange = {
+                        staffFormState.onValueChange(
+                            staffFormState.copy(
+                                lastName = it
+                            )
+                        ) },
+                    label = { Text(text = stringResource(R.string.last_name))}
                 )
-                
-                Row(modifier = Modifier.padding(top = 4.dp)) {
+
+                // Bottom Dialog Buttons
+                Row(
+                    modifier = Modifier.padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+
+                    // Cancellation Button
                     TextButton(
-                        onClick = { staffFormState.onDismiss() }
+                        onClick = staffFormState.onDismiss
                     ) {
                         Text(
-                            text = "Cancel",
+                            text = stringResource(R.string.cancel),
+                            fontWeight = FontWeight.Bold
                         )
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
 
+                    // Confirmation Button
                     TextButton(
-                        onClick = { staffFormState.onConfirm() }
+                        onClick = staffFormState.onConfirm,
+                        enabled = staffFormState.isStaffDataValid
                     ) {
-                        Text(text = "Confirm")
+                        Text(
+                            text = if(staffFormState.isStaffFormEditing)
+                                stringResource(R.string.update) else stringResource(R.string.add),
+                            fontWeight = FontWeight.Bold,
+                        )
                     }
                 }
             }

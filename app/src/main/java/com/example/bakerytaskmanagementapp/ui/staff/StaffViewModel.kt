@@ -2,11 +2,12 @@ package com.example.bakerytaskmanagementapp.ui.staff
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bakerytaskmanagementapp.data.database.OperationState
 import com.example.bakerytaskmanagementapp.data.database.model.Staff
 import com.example.bakerytaskmanagementapp.data.database.repository.StaffStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -16,10 +17,17 @@ class StaffViewModel @Inject constructor(
     private val staffStore: StaffStore
 ): ViewModel() {
     private var _staffScreenState = MutableStateFlow(StaffScreenState())
-    val uiState = _staffScreenState as StateFlow<StaffScreenState>
+    val uiState = _staffScreenState.asStateFlow()
+
+    private var _operationState = MutableStateFlow<OperationState>(OperationState.Idle)
+    val operationState = _operationState.asStateFlow()
 
     init {
-        // Fetch staff from the database, updates UI state on updates in database
+        loadStaff()
+    }
+
+    // Fetch staff from the database, updates UI state on updates in database
+    private fun loadStaff() {
         viewModelScope.launch {
             staffStore.getAllStaff().collect { staff ->
                 _staffScreenState.update {
@@ -31,23 +39,107 @@ class StaffViewModel @Inject constructor(
         }
     }
 
-    private suspend fun addStaff(staff: Staff) {
-        staffStore.addStaff(staff)
+    private fun setupStaffFormHandling() {
+        val staffFormState = _staffScreenState.value.staffFormState.copy(
+            onValueChange = ::updateStaffFormState,
+            onConfirm = {
+                val staff = Staff(
+                    id = uiState.value.staffFormState.id,
+                    firstName = uiState.value.staffFormState.firstName,
+                    lastName = uiState.value.staffFormState.lastName,
+                    profilePath = null
+                )
+
+                if(uiState.value.staffFormState.isStaffFormEditing) {
+                    updateStaffInDatabase(staff)
+                } else {
+                    insertStaffToDatabase(staff)
+                }
+
+                toggleStaffFormVisibility(false)
+            },
+            onDismiss = { toggleStaffFormVisibility(false) }
+        )
+
+        updateStaffFormState(staffFormState)
     }
 
-    private suspend fun updateStaff(staff: Staff) {
-        staffStore.updateStaff(staff)
+    private fun insertStaffToDatabase(staff: Staff) {
+        viewModelScope.launch {
+            try {
+                staffStore.addStaff(staff)
+                val message = "Staff added successfully"
+                _operationState.update { OperationState.Success(message) }
+            } catch (e: Exception) {
+                val message = "Error adding staff: ${e.message}"
+                _operationState.update { OperationState.Error(message) }
+            }
+        }
     }
 
-    private suspend fun deleteStaff(staff: Staff) {
-        staffStore.deleteStaff(staff)
+    private fun updateStaffInDatabase(staff: Staff) {
+        viewModelScope.launch {
+            try {
+                staffStore.updateStaff(staff)
+                val message = "Staff updated successfully"
+                _operationState.update { OperationState.Success(message) }
+            } catch (e: Exception) {
+                val message = "Error updating staff: ${e.message}"
+                _operationState.update { OperationState.Error(message) }
+            }
+        }
     }
 
-    fun toggleStaffFormVisibility() {
+    private fun deleteStaffFromDatabase(staff: Staff) {
+        viewModelScope.launch {
+            try {
+                staffStore.deleteStaff(staff)
+                val message = "Staff deleted successfully"
+                _operationState.update { OperationState.Success(message) }
+            } catch (e: Exception) {
+                val message = "Error deleting staff: ${e.message}"
+                _operationState.update { OperationState.Error(message) }
+            }
+        }
+    }
+
+    fun resetOperationState() {
+        _operationState.value = OperationState.Idle
+    }
+
+    fun editStaff(staff: Staff) {
+        updateStaffFormState(
+            StaffFormState(
+                id = staff.id,
+                firstName = staff.firstName,
+                lastName = staff.lastName,
+                isStaffFormEditing = true
+            )
+        )
+        toggleStaffFormVisibility(true)
+    }
+
+    fun deleteStaff(staff: Staff) {
+        deleteStaffFromDatabase(staff)
+    }
+
+    fun clearStaffForm() {
+        updateStaffFormState(StaffFormState())
+    }
+
+    fun toggleStaffFormVisibility(isVisible: Boolean) {
+        if(isVisible) {
+            setupStaffFormHandling()
+        }
+
         _staffScreenState.update {
             it.copy(
-                isStaffFormVisible = !it.isStaffFormVisible
+                isStaffFormVisible = isVisible
             )
+        }
+
+        if(!isVisible) {
+            clearStaffForm()
         }
     }
 
@@ -56,25 +148,27 @@ class StaffViewModel @Inject constructor(
      * Function can be used as middleware for other function such as validation
      */
     private fun updateUiState(uiState: StaffScreenState = _staffScreenState.value) {
-        _staffScreenState.value = uiState
+        _staffScreenState.update {
+            uiState
+        }
     }
 
     /**
      * Updates Staff Form State with new State instance
      * Function can be used as middleware for other function such as form validation
      */
-    fun updateStaffFormState(
+    private fun updateStaffFormState(
         staffFormState: StaffFormState = _staffScreenState.value.staffFormState
     ) {
-        val formState = uiState.value.staffFormState.copy(
+        val formState = staffFormState.copy(
             isStaffDataValid = validateStaffForm(staffFormState)
         )
 
-        updateUiState(
-            uiState.value.copy(
+        _staffScreenState.update {
+            it.copy(
                 staffFormState = formState
             )
-        )
+        }
     }
 
     /**
@@ -89,15 +183,16 @@ class StaffViewModel @Inject constructor(
 data class StaffScreenState(
     val staff: List<Staff> = emptyList(),
     val isStaffFormVisible: Boolean = false,
-    val staffFormState: StaffFormState = StaffFormState()
+    val staffFormState: StaffFormState = StaffFormState(),
 )
 
 data class StaffFormState(
+    val id: Int = 0,
     val firstName: String = "",
     val lastName: String = "",
     val isStaffFormEditing: Boolean = false,
     val isStaffDataValid: Boolean = false,
-    val onValueChange: () -> Unit = {},
+    val onValueChange: (StaffFormState) -> Unit = {},
     val onConfirm: () -> Unit = {},
     val onDismiss: () -> Unit = {},
 )
