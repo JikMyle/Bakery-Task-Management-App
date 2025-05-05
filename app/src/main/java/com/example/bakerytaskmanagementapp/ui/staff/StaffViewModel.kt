@@ -97,6 +97,7 @@ data class StaffFormState(
     val lastName: String = "",
     val isStaffFormEditing: Boolean = false,
     val isStaffDataValid: Boolean = false,
-    val onPositiveClick: () -> Unit = {},
-    val onNegativeClick: () -> Unit = {},
+    val onValueChange: () -> Unit = {},
+    val onConfirm: () -> Unit = {},
+    val onDismiss: () -> Unit = {},
 )
