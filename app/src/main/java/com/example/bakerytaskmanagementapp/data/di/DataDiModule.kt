@@ -10,8 +10,8 @@ import com.example.bakerytaskmanagementapp.data.database.dao.StaffTaskAssignment
 import com.example.bakerytaskmanagementapp.data.database.dao.TaskDao
 import com.example.bakerytaskmanagementapp.data.database.dao.TaskHistoryDao
 import com.example.bakerytaskmanagementapp.data.database.dao.TransactionRunner
-import com.example.bakerytaskmanagementapp.data.database.repository.InventoryItemStore
-import com.example.bakerytaskmanagementapp.data.database.repository.LocalInventoryItemStore
+import com.example.bakerytaskmanagementapp.data.database.repository.InventoryStore
+import com.example.bakerytaskmanagementapp.data.database.repository.LocalInventoryStore
 import com.example.bakerytaskmanagementapp.data.database.repository.LocalStaffStore
 import com.example.bakerytaskmanagementapp.data.database.repository.LocalTaskHistoryStore
 import com.example.bakerytaskmanagementapp.data.database.repository.LocalTaskStore
@@ -98,9 +98,9 @@ object DataDiModule {
 
     @Provides
     @Singleton
-    fun provideInventoryItemStore(
+    fun provideInventoryStore(
         inventoryItemDao: InventoryItemDao
-    ): InventoryItemStore = LocalInventoryItemStore(
+    ): InventoryStore = LocalInventoryStore(
         inventoryItemDao
     )
 

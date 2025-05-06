@@ -3,8 +3,9 @@ package com.example.bakerytaskmanagementapp.data.database.repository
 import com.example.bakerytaskmanagementapp.data.database.dao.InventoryItemDao
 import com.example.bakerytaskmanagementapp.data.database.model.InventoryItem
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 
-interface InventoryItemStore {
+interface InventoryStore {
     fun getAllItems(): Flow<List<InventoryItem>>
     fun getItem(id: Int): Flow<InventoryItem?>
 
@@ -27,9 +28,9 @@ interface InventoryItemStore {
 /**
  *  Local data repository for [InventoryItem] instances
  */
-class LocalInventoryItemStore constructor(
+class LocalInventoryStore @Inject constructor(
     private val inventoryItemDao: InventoryItemDao
-): InventoryItemStore {
+): InventoryStore {
     override fun getAllItems(): Flow<List<InventoryItem>> =
         inventoryItemDao.getAllItems()
 

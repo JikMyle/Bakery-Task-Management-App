@@ -3,6 +3,7 @@ package com.example.bakerytaskmanagementapp.data.database.repository
 import com.example.bakerytaskmanagementapp.data.database.dao.StaffDao
 import com.example.bakerytaskmanagementapp.data.database.model.Staff
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 
 interface StaffStore {
     fun getAllStaff(): Flow<List<Staff>>
@@ -28,7 +29,7 @@ interface StaffStore {
 /**
  * Local data repository for [Staff] instances
  */
-class LocalStaffStore constructor(
+class LocalStaffStore @Inject constructor(
     private val staffDao: StaffDao
 ): StaffStore {
     override fun getAllStaff(): Flow<List<Staff>> = staffDao.getAllStaff()
