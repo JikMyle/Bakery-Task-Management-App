@@ -50,7 +50,7 @@ class StaffViewModel @Inject constructor(
                     profilePath = null
                 )
 
-                if(uiState.value.staffFormState.isStaffFormEditing) {
+                if(uiState.value.staffFormState.isEditing) {
                     updateStaffInDatabase(staff)
                 } else {
                     insertStaffToDatabase(staff)
@@ -113,7 +113,7 @@ class StaffViewModel @Inject constructor(
                 id = staff.id,
                 firstName = staff.firstName,
                 lastName = staff.lastName,
-                isStaffFormEditing = true
+                isEditing = true
             )
         )
         toggleStaffFormVisibility(true)
@@ -161,7 +161,7 @@ class StaffViewModel @Inject constructor(
         staffFormState: StaffFormState = _staffScreenState.value.staffFormState
     ) {
         val formState = staffFormState.copy(
-            isStaffDataValid = validateStaffForm(staffFormState)
+            isDataValid = validateStaffForm(staffFormState)
         )
 
         _staffScreenState.update {
@@ -190,8 +190,8 @@ data class StaffFormState(
     val id: Int = 0,
     val firstName: String = "",
     val lastName: String = "",
-    val isStaffFormEditing: Boolean = false,
-    val isStaffDataValid: Boolean = false,
+    val isEditing: Boolean = false,
+    val isDataValid: Boolean = false,
     val onValueChange: (StaffFormState) -> Unit = {},
     val onConfirm: () -> Unit = {},
     val onDismiss: () -> Unit = {},

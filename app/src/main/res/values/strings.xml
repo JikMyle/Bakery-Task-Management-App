@@ -4,9 +4,24 @@
     <string name="manage_staff">Manage Staff</string>
     <string name="add_staff">Add Staff</string>
     <string name="add_staff_button_content_description">Add Staff Button</string>
+    <string name="edit_staff">Edit Staff</string>
+    <string name="edit_staff_button_content_description">Edit Staff Button</string>
+    <string name="delete_staff_button_content_description">Delete Staff Button</string>
 
     <string name="first_name">First Name</string>
     <string name="last_name">Last Name</string>
+
+    <string name="manage_inventory">Manage Inventory</string>
+    <string name="add_item">Add Item</string>
+    <string name="add_item_button_content_description">Add Inventory Item Button</string>
+    <string name="edit_item">Edit Item</string>"
+    <string name="edit_item_button_content_description">Edit Inventory Item Button</string>
+    <string name="delete_item_button_content_description">Delete Inventory Item Button</string>
+
+    <string name="item_name">Item Name</string>"
+    <string name="quantity">Quantity</string>
+    <string name="measurement_unit">Measurement Unit</string>
+    <string name="measurement_unit_btn_cont_desc">Measurement Unit Dropdown Menu Button"</string>
 
     <string name="save">Save</string>
     <string name="update">Update</string>

@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,7 +34,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +55,7 @@ fun StaffScreen(
     val uiState = viewModel.uiState.collectAsState()
     val operationState by viewModel.operationState.collectAsStateWithLifecycle()
 
+    // The following block is for displaying toast messages
     LaunchedEffect(operationState) {
         when (val state = operationState) {
             is OperationState.Success -> {
@@ -171,21 +171,24 @@ private fun StaffListItem(
     onItemDeleteClick: (Staff) -> Unit = {},
 ) {
     ElevatedCard(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.medium,
+        modifier = modifier.height(80.dp),
+        shape = MaterialTheme.shapes.small,
     ) {
         Row(
-            modifier = Modifier,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             ProfileAvatar(
-                modifier = Modifier.padding(16.dp, 16.dp),
+                modifier = Modifier.padding(end = 16.dp),
                 letter = staff.firstName[0].toString()
             )
 
             Text(
                 text = "${staff.firstName} ${staff.lastName}",
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
             )
 
             // This [SPACER] is to separate the left and right contents
@@ -196,7 +199,8 @@ private fun StaffListItem(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Edit,
-                    contentDescription = null /* TODO */
+                    contentDescription =
+                        stringResource(R.string.edit_staff_button_content_description)
                 )
             }
 
@@ -205,7 +209,8 @@ private fun StaffListItem(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Delete,
-                    contentDescription = null /* TODO */
+                    contentDescription =
+                        stringResource(R.string.delete_staff_button_content_description)
                 )
             }
         }
@@ -223,7 +228,7 @@ fun ProfileAvatar(
 ) {
     Box(
         modifier = modifier
-            .size(36.dp)
+            .size(48.dp)
             .background(
                 color = MaterialTheme.colorScheme.primary,
                 shape = MaterialTheme.shapes.extraLarge
@@ -232,9 +237,9 @@ fun ProfileAvatar(
         Text(
             modifier = Modifier.align(Alignment.Center),
             text = letter,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onPrimary,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.ExtraBold
         )
     }
 }
@@ -253,7 +258,8 @@ private fun StaffFormDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = if(staffFormState.isStaffFormEditing) "Edit Staff" else "Add Staff",
+                    text = if(staffFormState.isEditing) stringResource(R.string.edit_staff)
+                            else stringResource(R.string.add_staff),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -301,10 +307,10 @@ private fun StaffFormDialog(
                     // Confirmation Button
                     TextButton(
                         onClick = staffFormState.onConfirm,
-                        enabled = staffFormState.isStaffDataValid
+                        enabled = staffFormState.isDataValid
                     ) {
                         Text(
-                            text = if(staffFormState.isStaffFormEditing)
+                            text = if(staffFormState.isEditing)
                                 stringResource(R.string.update) else stringResource(R.string.add),
                             fontWeight = FontWeight.Bold,
                         )
