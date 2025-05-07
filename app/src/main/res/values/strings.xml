@@ -23,6 +23,14 @@
     <string name="measurement_unit">Measurement Unit</string>
     <string name="measurement_unit_btn_cont_desc">Measurement Unit Dropdown Menu Button"</string>
 
+    <string name="manage_tasks">Manage Tasks</string>
+    <string name="add_task">Add Task</string>
+    <string name="add_task_button_content_description">Add Task Button</string>
+    <string name="edit_task">Edit Staff</string>
+    <string name="edit_task_button_content_description">Edit Task Button</string>
+    <string name="delete_task_button_content_description">Delete Task Button</string>
+    <string name="toggle_task_priority_button_content_description">Toggle Task Priority Button</string>
+
     <string name="save">Save</string>
     <string name="update">Update</string>
     <string name="delete">Delete</string>
