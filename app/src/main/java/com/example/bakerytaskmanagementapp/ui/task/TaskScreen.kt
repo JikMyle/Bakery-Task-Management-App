@@ -3,6 +3,9 @@ package com.example.bakerytaskmanagementapp.ui.task
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -20,18 +24,26 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.twotone.Star
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,6 +54,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringArrayResource
@@ -49,6 +63,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.bakerytaskmanagementapp.R
@@ -58,6 +73,10 @@ import com.example.bakerytaskmanagementapp.data.database.model.Task
 import com.example.bakerytaskmanagementapp.data.database.model.TaskStatusType
 import com.example.bakerytaskmanagementapp.data.database.model.TaskWithAssignedStaff
 import com.example.bakerytaskmanagementapp.ui.staff.ProfileAvatar
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 
 @Composable
@@ -84,6 +103,12 @@ fun TaskScreen(
         }
     }
 
+    if(uiState.isTaskFormVisible) {
+        TaskEntryDialog(
+            dialogState = uiState.taskEntryDialogState
+        )
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -103,7 +128,7 @@ fun TaskScreen(
             )
 
             AddTaskButton{
-                viewModel.toggleFormVisibility(true)
+                viewModel.toggleEntryDialogVisibility(true)
             }
         }
 
@@ -194,9 +219,9 @@ private fun TaskListItem(
             }
 
             Text(
-                text = taskWithAssignedStaff.task.let { it.dateDeadline
-                    ?.let { date ->  it.formatDate(date) } ?: ""
-                },
+                text = taskWithAssignedStaff.task.dateDeadline?.let{
+                    formatDate(it)
+                } ?: "",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.width(112.dp)
             )
@@ -251,12 +276,12 @@ private fun TaskDueInText(
             .width(112.dp)
             .background(
                 color = task.getDueInMinutes()?.let {
-                        if(it < 0) {
-                            Color.Red
-                        } else {
-                            Color(colorResource(R.color.star_yellow).toArgb())
-                        }
-                    } ?: MaterialTheme.colorScheme.primary,
+                    if (it < 0) {
+                        Color.Red
+                    } else {
+                        Color(colorResource(R.color.star_yellow).toArgb())
+                    }
+                } ?: MaterialTheme.colorScheme.primary,
                 shape = MaterialTheme.shapes.large
             )
             .padding(8.dp, 4.dp)
@@ -381,4 +406,172 @@ private fun AddTaskButton(
             )
         }
     }
+}
+
+@Composable
+private fun TaskEntryDialog(
+    modifier: Modifier = Modifier,
+    dialogState: TaskEntryDialogState
+) {
+    val callbacks = dialogState.dialogCallbacks
+    var isDatePickerVisible by remember { mutableStateOf(false) }
+
+    Dialog(
+        onDismissRequest = callbacks::onDismiss
+    ) {
+        Card(modifier = modifier.width(300.dp)) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = if(dialogState.isEditing) stringResource(R.string.edit_task)
+                    else stringResource(R.string.add_task),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                OutlinedTextField(
+                    value = dialogState.task.title,
+                    onValueChange = {
+                        callbacks.onValueChange(
+                            dialogState.copy(
+                                task = dialogState.task.copy(
+                                    title = it
+                                )
+                            )
+                        ) },
+                    label = { Text(text = stringResource(R.string.title)) }
+                )
+
+                OutlinedTextField(
+                    value = dialogState.task.dateDeadline?.let {
+                        formatDate(it, "MM/dd/yyyy")
+                    } ?: "",
+                    onValueChange = {},
+                    label = { Text(text = stringResource(R.string.end_date)) },
+                    trailingIcon = {
+                        Icon(
+                            imageVector = Icons.Filled.DateRange,
+                            contentDescription = stringResource(R.string.select_date),
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pointerInput(dialogState.task.dateDeadline?.let {
+                            formatDate(it, "MM/dd/yyyy")
+                        } ?: "") {
+                            awaitEachGesture {
+                                awaitFirstDown(pass = PointerEventPass.Initial)
+                                val upEvent = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                                if (upEvent != null) {
+                                    isDatePickerVisible = true
+                                }
+                            }
+                        }
+                )
+
+                if(isDatePickerVisible) {
+                    TaskEntryFormDatePickerDialog(
+                        date = dialogState.task.dateDeadline,
+                        onDismiss = { isDatePickerVisible = false },
+                        onConfirm = { newDate ->
+                            val oldDate = dialogState.task.dateDeadline
+
+                            callbacks.onValueChange(
+                                dialogState.copy(
+                                    task = dialogState.task.copy(
+                                        dateDeadline = oldDate?.let {
+                                            replaceDate(it, newDate)
+                                        } ?: newDate
+                                    )
+                                )
+                            )
+
+                            isDatePickerVisible = false
+                        },
+                    )
+                }
+
+                // Bottom Dialog Buttons
+                Row(
+                    modifier = Modifier.padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+
+                    // Cancellation Button
+                    TextButton(
+                        onClick = callbacks::onDismiss
+                    ) {
+                        Text(
+                            text = stringResource(R.string.cancel),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    // Confirmation Button
+                    TextButton(
+                        onClick = callbacks::onConfirm,
+                        enabled = dialogState.isDataValid
+                    ) {
+                        Text(
+                            text = if(dialogState.isEditing)
+                                stringResource(R.string.update) else stringResource(R.string.add),
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TaskEntryFormDatePickerDialog(
+    modifier: Modifier = Modifier,
+    date: Date?,
+    onDismiss: () -> Unit,
+    onConfirm: (Date) -> Unit,
+) {
+    val datePickerState = rememberDatePickerState()
+    date?.let{ datePickerState.selectedDateMillis = it.time}
+
+    DatePickerDialog(
+        modifier = modifier,
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val selectedDate = Date(datePickerState.selectedDateMillis!!)
+                    onConfirm(selectedDate)
+                },
+                enabled = datePickerState.selectedDateMillis != null
+            ) {
+                Text(text = stringResource(R.string.confirm))
+            }
+        }
+    ) {
+        DatePicker(
+            state = datePickerState
+        )
+    }
+}
+
+fun formatDate(date: Date, pattern: String = "MMM dd yyyy"): String {
+    val dateFormat = SimpleDateFormat(pattern, Locale.getDefault())
+    return dateFormat.format(date)
+}
+
+fun replaceDate(oldDate: Date, newDate: Date): Date {
+    val oldCalendar = Calendar.getInstance().apply { time = oldDate }
+    val newCalendar = Calendar.getInstance().apply { time = newDate }
+
+    oldCalendar.set(Calendar.YEAR, newCalendar.get(Calendar.YEAR))
+    oldCalendar.set(Calendar.MONTH, newCalendar.get(Calendar.MONTH))
+    oldCalendar.set(Calendar.DAY_OF_MONTH, newCalendar.get(Calendar.DAY_OF_MONTH))
+
+    return oldCalendar.time
 }
