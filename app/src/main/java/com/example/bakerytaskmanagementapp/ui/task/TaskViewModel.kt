@@ -145,14 +145,14 @@ class TaskViewModel @Inject constructor(
         _uiState.update {
             if(isVisible) {
                 it.copy(
-                    isTaskFormVisible = true,
+                    isTaskEntryDialogVisible = true,
                     taskEntryDialogState = it.taskEntryDialogState.copy(
                         dialogCallbacks = setupDialogCallbacks()
                     )
                 )
             } else {
                 it.copy(
-                    isTaskFormVisible = false,
+                    isTaskEntryDialogVisible = false,
                     taskEntryDialogState = TaskEntryDialogState()
                 )
             }
@@ -173,6 +173,7 @@ class TaskViewModel @Inject constructor(
         }
     }
 
+    // TODO: Add check if time is in the past, must return false
     private fun validateDialogData(dialogState: TaskEntryDialogState): Boolean {
         return dialogState.task.title.isNotBlank() &&
                 dialogState.task.dateDeadline != null
@@ -181,7 +182,7 @@ class TaskViewModel @Inject constructor(
 
 data class TaskScreenUiState(
     val tasksWithStaff: List<TaskWithAssignedStaff> = emptyList(),
-    val isTaskFormVisible: Boolean = false,
+    val isTaskEntryDialogVisible: Boolean = false,
     val taskEntryDialogState: TaskEntryDialogState = TaskEntryDialogState(),
 ): UiState
 
@@ -200,6 +201,7 @@ fun Task.getDueInMinutes(): Long? {
     return diff?.milliseconds?.inWholeMinutes
 }
 
+// TODO: Add entry field errors states
 data class TaskEntryDialogState(
     val task: Task = Task(0, ""),
     val assignedStaff: List<Staff> = emptyList(),

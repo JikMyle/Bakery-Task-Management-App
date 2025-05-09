@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.twotone.Star
 import androidx.compose.material3.Card
@@ -41,9 +43,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -103,7 +108,7 @@ fun TaskScreen(
         }
     }
 
-    if(uiState.isTaskFormVisible) {
+    if(uiState.isTaskEntryDialogVisible) {
         TaskEntryDialog(
             dialogState = uiState.taskEntryDialogState
         )
@@ -408,6 +413,10 @@ private fun AddTaskButton(
     }
 }
 
+/*
+ * Composable for the Task Entry Dialog
+ * DevNote: Becomes confusing to look at because of the nested composables
+ */
 @Composable
 private fun TaskEntryDialog(
     modifier: Modifier = Modifier,
@@ -415,6 +424,7 @@ private fun TaskEntryDialog(
 ) {
     val callbacks = dialogState.dialogCallbacks
     var isDatePickerVisible by remember { mutableStateOf(false) }
+    var isTimePickerVisible by remember { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = callbacks::onDismiss
@@ -444,6 +454,10 @@ private fun TaskEntryDialog(
                     label = { Text(text = stringResource(R.string.title)) }
                 )
 
+                /*
+                    DatePicker text field and dialog is very long compared to other parts
+                    Might need to refactor later, or modularize these types of composables
+                 */
                 OutlinedTextField(
                     value = dialogState.task.dateDeadline?.let {
                         formatDate(it, "MM/dd/yyyy")
@@ -490,6 +504,58 @@ private fun TaskEntryDialog(
 
                             isDatePickerVisible = false
                         },
+                    )
+                }
+
+                /*
+                    Same issue with the TimePicker text field and dialog as above
+                 */
+                OutlinedTextField(
+                    value = dialogState.task.dateDeadline?.let {
+                        formatDate(it, "hh:mm a")
+                    } ?: "",
+                    onValueChange = {},
+                    label = { Text(text = stringResource(R.string.end_time)) },
+                    trailingIcon = {
+                        Icon(
+                            imageVector = Icons.Filled.Notifications,
+                            contentDescription = stringResource(R.string.select_time),
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pointerInput(dialogState.task.dateDeadline?.let {
+                            formatDate(it, "hh:mm a")
+                        } ?: "") {
+                            awaitEachGesture {
+                                awaitFirstDown(pass = PointerEventPass.Initial)
+                                val upEvent = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                                if (upEvent != null) {
+                                    isTimePickerVisible = true
+                                }
+                            }
+                        }
+                )
+
+                if(isTimePickerVisible) {
+                    TaskEntryFormTimePickerDialog(
+                        time = dialogState.task.dateDeadline,
+                        onDismiss = { isTimePickerVisible = false },
+                        onConfirm = { newTime ->
+                            val oldTime = dialogState.task.dateDeadline
+
+                            callbacks.onValueChange(
+                                dialogState.copy(
+                                    task = dialogState.task.copy(
+                                        dateDeadline = oldTime?.let {
+                                            replaceTime(it, newTime)
+                                        } ?: newTime
+                                    )
+                                )
+                            )
+
+                            isTimePickerVisible = false
+                        }
                     )
                 }
 
@@ -552,6 +618,13 @@ private fun TaskEntryFormDatePickerDialog(
             ) {
                 Text(text = stringResource(R.string.confirm))
             }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss
+            ) {
+                Text(text = stringResource(R.string.cancel))
+            }
         }
     ) {
         DatePicker(
@@ -560,6 +633,88 @@ private fun TaskEntryFormDatePickerDialog(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TaskEntryFormTimePickerDialog(
+    modifier: Modifier = Modifier,
+    time: Date?,
+    onDismiss: () -> Unit,
+    onConfirm: (Date) -> Unit,
+) {
+    val timePickerState = rememberTimePickerState(is24Hour = false)
+
+    time?.let { // If time is not null, then timePickerState should be updated
+        val selectedTime = Calendar.getInstance()
+        selectedTime.time = it
+
+        timePickerState.hour = selectedTime.get(Calendar.HOUR_OF_DAY)
+        timePickerState.minute = selectedTime.get(Calendar.MINUTE)
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss
+    ) {
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            tonalElevation = 6.dp,
+            modifier = modifier
+                .width(IntrinsicSize.Min)
+                .height(IntrinsicSize.Min)
+                .background(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    color = MaterialTheme.colorScheme.surface
+                ),
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 20.dp),
+                    text = stringResource(R.string.select_time),
+                    style = MaterialTheme.typography.labelMedium
+                )
+
+                TimePicker(timePickerState)
+
+                Row(
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = onDismiss
+                    ) {
+                        Text(text = stringResource(R.string.cancel))
+                    }
+
+                    TextButton(
+                        onClick = {
+                            val newTime = Calendar.getInstance().apply {
+                                set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                                set(Calendar.MINUTE, timePickerState.minute)
+                            }
+
+                            onConfirm(newTime.time)
+                        },
+                        enabled = timePickerState.hour != -1 && timePickerState.minute != -1
+                    ) {
+                        Text(text = stringResource(R.string.confirm))
+                    }
+                }
+
+            }
+        }
+    }
+}
+
+/*
+    DevNote: Might need to change Date objects in DB models to Calendar instance.
+    It might be easier to manage and update.
+ */
 fun formatDate(date: Date, pattern: String = "MMM dd yyyy"): String {
     val dateFormat = SimpleDateFormat(pattern, Locale.getDefault())
     return dateFormat.format(date)
@@ -572,6 +727,17 @@ fun replaceDate(oldDate: Date, newDate: Date): Date {
     oldCalendar.set(Calendar.YEAR, newCalendar.get(Calendar.YEAR))
     oldCalendar.set(Calendar.MONTH, newCalendar.get(Calendar.MONTH))
     oldCalendar.set(Calendar.DAY_OF_MONTH, newCalendar.get(Calendar.DAY_OF_MONTH))
+
+    return oldCalendar.time
+}
+
+fun replaceTime(oldTime: Date, newTime: Date): Date {
+    val oldCalendar = Calendar.getInstance().apply { time = oldTime }
+    val newCalendar = Calendar.getInstance().apply { time = newTime }
+
+    oldCalendar.set(Calendar.HOUR_OF_DAY, newCalendar.get(Calendar.HOUR_OF_DAY))
+    oldCalendar.set(Calendar.MINUTE, newCalendar.get(Calendar.MINUTE))
+    oldCalendar.set(Calendar.SECOND, 0)
 
     return oldCalendar.time
 }
