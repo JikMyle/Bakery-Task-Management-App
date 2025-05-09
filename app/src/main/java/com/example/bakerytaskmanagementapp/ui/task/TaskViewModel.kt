@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.bakerytaskmanagementapp.data.database.OperationState
 import com.example.bakerytaskmanagementapp.data.database.model.Staff
 import com.example.bakerytaskmanagementapp.data.database.model.Task
+import com.example.bakerytaskmanagementapp.data.database.model.TaskStatusType
 import com.example.bakerytaskmanagementapp.data.database.model.TaskWithAssignedStaff
 import com.example.bakerytaskmanagementapp.data.database.repository.StaffStore
 import com.example.bakerytaskmanagementapp.data.database.repository.TaskStore
@@ -13,6 +14,7 @@ import com.example.bakerytaskmanagementapp.data.utils.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -83,6 +85,18 @@ class TaskViewModel @Inject constructor(
         }
     }
 
+    private fun loadStaffListToDialog() {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    taskEntryDialogState = it.taskEntryDialogState.copy(
+                        staffList = staffStore.getAllStaff().firstOrNull() ?: emptyList()
+                    )
+                )
+            }
+        }
+    }
+
     fun resetOperationState() {
         _operationState.update { OperationState.Idle }
     }
@@ -109,6 +123,16 @@ class TaskViewModel @Inject constructor(
         )
 
         toggleEntryDialogVisibility(true)
+    }
+
+    fun markTaskAsDone(taskWithStaff: TaskWithAssignedStaff) {
+        updateTaskInDatabase(
+            taskWithStaff.copy(
+                task = taskWithStaff.task.copy(
+                    status = TaskStatusType.COMPLETED
+                )
+            )
+        )
     }
 
     fun deleteTask(taskWithStaff: TaskWithAssignedStaff) {
@@ -142,6 +166,8 @@ class TaskViewModel @Inject constructor(
     }
 
     fun toggleEntryDialogVisibility(isVisible: Boolean) {
+        loadStaffListToDialog()
+
         _uiState.update {
             if(isVisible) {
                 it.copy(
@@ -202,9 +228,11 @@ fun Task.getDueInMinutes(): Long? {
 }
 
 // TODO: Add entry field errors states
+// Staff list value could be better implemented if need be
 data class TaskEntryDialogState(
     val task: Task = Task(0, ""),
     val assignedStaff: List<Staff> = emptyList(),
+    val staffList: List<Staff> = emptyList(),
     val isEditing: Boolean = false,
     val isDataValid: Boolean = false,
     val dialogCallbacks: TaskEntryDialogCallbacks =

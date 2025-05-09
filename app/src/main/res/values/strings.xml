@@ -47,6 +47,11 @@
     <string name="end_time">End Time</string>
     <string name="select_date">Select date</string>
     <string name="select_time">Select time</string>
+    <string name="assign_staff">Assign staff</string>
+    <string name="no_staff_assigned">No staff assigned</string>
+    <string name="assigned_staff">Assigned staff</string>
+    <string name="assigned_staff_count">%1$d staff assigned</string>
+    <string name="mark_as_done">Mark as done</string>
 
     <string name="more_options">More options</string>
     <string name="save">Save</string>

@@ -23,15 +23,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.twotone.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -78,6 +81,7 @@ import com.example.bakerytaskmanagementapp.data.database.model.Task
 import com.example.bakerytaskmanagementapp.data.database.model.TaskStatusType
 import com.example.bakerytaskmanagementapp.data.database.model.TaskWithAssignedStaff
 import com.example.bakerytaskmanagementapp.ui.staff.ProfileAvatar
+import com.example.bakerytaskmanagementapp.ui.util.drawVerticalScrollbar
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -144,7 +148,8 @@ fun TaskScreen(
             taskList = uiState.tasksWithStaff,
             onItemTogglePriority = viewModel::toggleTaskPriority,
             onItemDeleteClick = viewModel::deleteTask,
-            onItemEditClick = viewModel::editTask
+            onItemEditClick = viewModel::editTask,
+            onItemMarkAsDone = viewModel::markTaskAsDone
         )
     }
 }
@@ -156,6 +161,7 @@ private fun TaskList(
     onItemTogglePriority: (TaskWithAssignedStaff) -> Unit,
     onItemEditClick: (TaskWithAssignedStaff) -> Unit,
     onItemDeleteClick: (TaskWithAssignedStaff) -> Unit,
+    onItemMarkAsDone: (TaskWithAssignedStaff) -> Unit
 ) {
     LazyColumn(
         modifier = modifier,
@@ -168,7 +174,8 @@ private fun TaskList(
                 taskWithAssignedStaff = it,
                 onItemTogglePriority = onItemTogglePriority,
                 onItemEditClick = onItemEditClick,
-                onItemDeleteClick = onItemDeleteClick
+                onItemDeleteClick = onItemDeleteClick,
+                onItemMarkAsDone = onItemMarkAsDone
             )
         }
     }
@@ -181,6 +188,7 @@ private fun TaskListItem(
     onItemTogglePriority: (TaskWithAssignedStaff) -> Unit,
     onItemEditClick: (TaskWithAssignedStaff) -> Unit,
     onItemDeleteClick: (TaskWithAssignedStaff) -> Unit,
+    onItemMarkAsDone: (TaskWithAssignedStaff) -> Unit,
 ) {
     ElevatedCard(
         modifier = modifier.height(80.dp),
@@ -231,26 +239,29 @@ private fun TaskListItem(
                 modifier = Modifier.width(112.dp)
             )
 
-            TaskDueInText(task = taskWithAssignedStaff.task)
+            TaskDueInText(
+                task = taskWithAssignedStaff.task,
+                modifier = Modifier.padding(end = 32.dp))
 
-            IconButton(
-                onClick = { /*TODO*/ },
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription =
-                        stringResource(R.string.assign_staff_to_task),
-                )
-            }
+//            IconButton(
+//                onClick = { },
+//            ) {
+//                Icon(
+//                    imageVector = Icons.Filled.Add,
+//                    contentDescription =
+//                        stringResource(R.string.assign_staff_to_task),
+//                )
+//            }
 
             TaskStaffAvatarList(
-                modifier = Modifier.width(272.dp),
+                modifier = Modifier.width(304.dp),
                 staffList = taskWithAssignedStaff.assignedStaff
             )
 
             TaskListItemDropdownMenu(
                 onItemEditClick = { onItemEditClick(taskWithAssignedStaff) },
-                onItemDeleteClick = { onItemDeleteClick(taskWithAssignedStaff) }
+                onItemDeleteClick = { onItemDeleteClick(taskWithAssignedStaff) },
+                onItemMarkAsDone = { onItemMarkAsDone(taskWithAssignedStaff) }
             )
         }
     }
@@ -307,20 +318,36 @@ private fun TaskStaffAvatarList(
         val maxCount = 5
         val avatarOffset = -16
 
-        LazyRow {
-            items(staffList.take(maxCount)) { staff ->
-                ProfileAvatar(
-                    letter = staff.firstName[0].toString(),
-                    modifier = Modifier
-                        .offset(x = (staffList.indexOf(staff) * avatarOffset).dp)
-                        .border(
-                            width = 1.dp,
-                            color = CardDefaults.elevatedCardColors().containerColor,
-                            shape = MaterialTheme.shapes.extraLarge
-                        )
-                )
+        Icon(
+            imageVector = Icons.Filled.Person,
+            contentDescription = stringResource(R.string.assigned_staff),
+            modifier = Modifier.padding(end = 8.dp)
+        )
+
+        if(staffList.isEmpty()) {
+            Text(
+                text = stringResource(R.string.no_staff_assigned),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(end = 8.dp),
+            )
+        } else {
+            LazyRow {
+                items(staffList.take(maxCount)) { staff ->
+                    ProfileAvatar(
+                        letter = staff.firstName[0].toString(),
+                        modifier = Modifier
+                            .offset(x = (staffList.indexOf(staff) * avatarOffset).dp)
+                            .border(
+                                width = 1.dp,
+                                color = CardDefaults.elevatedCardColors().containerColor,
+                                shape = MaterialTheme.shapes.extraLarge
+                            )
+                    )
+                }
             }
         }
+
         if(staffList.count() > maxCount) {
             Text(
                 text = "+${staffList.count() - maxCount}",
@@ -339,6 +366,7 @@ private fun TaskListItemDropdownMenu(
     modifier: Modifier = Modifier,
     onItemEditClick: () -> Unit,
     onItemDeleteClick: () -> Unit,
+    onItemMarkAsDone: () -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -375,6 +403,17 @@ private fun TaskListItemDropdownMenu(
                 onClick = {
                     isExpanded = false
                     onItemDeleteClick()
+                },
+            )
+
+            DropdownMenuItem(
+                text = { Text(
+                    text = stringResource(R.string.mark_as_done),
+                    style = MaterialTheme.typography.labelLarge
+                ) },
+                onClick = {
+                    isExpanded = false
+                    onItemMarkAsDone()
                 },
             )
         }
@@ -415,7 +454,7 @@ private fun AddTaskButton(
 
 /*
  * Composable for the Task Entry Dialog
- * DevNote: Becomes confusing to look at because of the nested composables
+ * DevNote: Becomes confusing to look at because of the nested composable
  */
 @Composable
 private fun TaskEntryDialog(
@@ -425,6 +464,7 @@ private fun TaskEntryDialog(
     val callbacks = dialogState.dialogCallbacks
     var isDatePickerVisible by remember { mutableStateOf(false) }
     var isTimePickerVisible by remember { mutableStateOf(false) }
+    var isAssignmentDialogVisible by remember { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = callbacks::onDismiss
@@ -456,7 +496,7 @@ private fun TaskEntryDialog(
 
                 /*
                     DatePicker text field and dialog is very long compared to other parts
-                    Might need to refactor later, or modularize these types of composables
+                    Might need to refactor later, or modularize these types of composable
                  */
                 OutlinedTextField(
                     value = dialogState.task.dateDeadline?.let {
@@ -477,7 +517,8 @@ private fun TaskEntryDialog(
                         } ?: "") {
                             awaitEachGesture {
                                 awaitFirstDown(pass = PointerEventPass.Initial)
-                                val upEvent = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                                val upEvent =
+                                    waitForUpOrCancellation(pass = PointerEventPass.Initial)
                                 if (upEvent != null) {
                                     isDatePickerVisible = true
                                 }
@@ -529,7 +570,8 @@ private fun TaskEntryDialog(
                         } ?: "") {
                             awaitEachGesture {
                                 awaitFirstDown(pass = PointerEventPass.Initial)
-                                val upEvent = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                                val upEvent =
+                                    waitForUpOrCancellation(pass = PointerEventPass.Initial)
                                 if (upEvent != null) {
                                     isTimePickerVisible = true
                                 }
@@ -555,6 +597,47 @@ private fun TaskEntryDialog(
                             )
 
                             isTimePickerVisible = false
+                        }
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = { isAssignmentDialogVisible = true },
+                    shape = MaterialTheme.shapes.extraSmall,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.assign_staff)
+                    )
+
+                    Text(
+                        text = if(dialogState.assignedStaff.isEmpty()){
+                            stringResource(R.string.assign_staff)
+                        } else {
+                            stringResource(
+                                R.string.assigned_staff_count,
+                                dialogState.assignedStaff.size
+                            )
+                        },
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                if(isAssignmentDialogVisible) {
+                    StaffAssignmentDialog(
+                        assignedStaff = dialogState.assignedStaff,
+                        staffList = dialogState.staffList,
+                        onDismiss = { isAssignmentDialogVisible = false },
+                        onConfirm = {
+                            callbacks.onValueChange(
+                                dialogState.copy(
+                                    assignedStaff = it
+                                )
+                            )
+
+                            isAssignmentDialogVisible = false
                         }
                     )
                 }
@@ -674,7 +757,7 @@ private fun TaskEntryFormTimePickerDialog(
                         .fillMaxWidth()
                         .padding(bottom = 20.dp),
                     text = stringResource(R.string.select_time),
-                    style = MaterialTheme.typography.labelMedium
+                    style = MaterialTheme.typography.labelLarge
                 )
 
                 TimePicker(timePickerState)
@@ -711,6 +794,99 @@ private fun TaskEntryFormTimePickerDialog(
     }
 }
 
+@Composable
+private fun StaffAssignmentDialog(
+    modifier: Modifier = Modifier,
+    assignedStaff: List<Staff>,
+    staffList: List<Staff>,
+    onDismiss: () -> Unit,
+    onConfirm: (List<Staff>) -> Unit,
+) {
+    var selectedStaff by remember { mutableStateOf(assignedStaff) }
+    val listState = rememberLazyListState()
+
+    Dialog(
+        onDismissRequest = onDismiss
+    ) {
+        Card(
+            modifier = modifier
+                .width(300.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    text = stringResource(R.string.assign_staff_to_task),
+                    style = MaterialTheme.typography.labelLarge
+                )
+
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(2.dp),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .drawVerticalScrollbar(listState)
+                ) {
+                    items(staffList) { staff ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Start,
+                        ) {
+                            Checkbox(
+                                checked = selectedStaff.contains(staff),
+                                onCheckedChange = { checked ->
+                                    if (checked) {
+                                        selectedStaff += staff
+                                    } else {
+                                        selectedStaff -= staff
+                                    }
+                                },
+                                modifier = Modifier.padding(end = 16.dp)
+                            )
+
+                            Text(
+                                text = "${staff.firstName} ${staff.lastName}"
+                                    .uppercaseWord(),
+                                modifier = Modifier.padding(start = 16.dp)
+                            )
+                        }
+
+                        if(staffList.indexOf(staff) != staffList.lastIndex) {
+                            Spacer(
+                                modifier = Modifier
+                                    .border(1.dp, MaterialTheme.colorScheme.secondary)
+                                    .fillMaxWidth()
+                                    .height(1.dp)
+                            )
+                        }
+                    }
+                }
+
+                Row {
+                    TextButton(onClick = onDismiss) {
+                        Text(text = stringResource(R.string.cancel))
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    TextButton(
+                        onClick = { onConfirm(selectedStaff) },
+                    ) {
+                        Text(text = stringResource(R.string.confirm))
+                    }
+                }
+            }
+        }
+    }
+}
+
 /*
     DevNote: Might need to change Date objects in DB models to Calendar instance.
     It might be easier to manage and update.
@@ -740,4 +916,12 @@ fun replaceTime(oldTime: Date, newTime: Date): Date {
     oldCalendar.set(Calendar.SECOND, 0)
 
     return oldCalendar.time
+}
+
+fun String.uppercaseWord(): String {
+    return this.split(" ")
+        .joinToString { it
+            .lowercase()
+            .replaceFirstChar { char -> char.uppercaseChar() }
+        }
 }
