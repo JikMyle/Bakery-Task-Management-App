@@ -51,11 +51,12 @@ class LocalTaskHistoryStore @Inject constructor(
             val task = taskDao.getTask(taskHistory.taskId)
                 .firstOrNull() ?: return@transactionRunner
 
-            // Changes task status back to PENDING and removes dateDeleted
+            // Changes task status back to PENDING and removes dateDeleted and dateCompleted
             taskDao.updateTask(
                 task.copy(
                     status = TaskStatusType.PENDING,
                     dateLastUpdated = Date(),
+                    dateCompleted = null,
                     dateDeleted = null,
                 )
             )

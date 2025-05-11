@@ -42,6 +42,13 @@
 
     <string name="more_hidden_count">%1$s more...</string>
 
+    <string name="task_history">Task History</string>
+    <string name="deleted">Deleted</string>
+    <string name="completed">Completed</string>
+    <string name="updated">Updated</string>
+    <string name="created">Created</string>
+    <string name="undo">Undo</string>
+
     <string name="title">Title</string>
     <string name="end_date">End Date</string>
     <string name="end_time">End Time</string>

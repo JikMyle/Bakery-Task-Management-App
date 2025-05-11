@@ -218,7 +218,7 @@ private fun TaskListItem(
                         imageVector = Icons.Filled.Star,
                         contentDescription =
                             stringResource(R.string.set_task_as_priority),
-                        tint = Color(colorResource(R.color.star_yellow).toArgb()),
+                        tint = Color(colorResource(R.color.yellow).toArgb()),
                         modifier = Modifier.size(32.dp)
                     )
                 } else { // Empty star for non-priority tasks
@@ -295,7 +295,7 @@ private fun TaskDueInText(
                     if (it < 0) {
                         Color.Red
                     } else {
-                        Color(colorResource(R.color.star_yellow).toArgb())
+                        Color(colorResource(R.color.yellow).toArgb())
                     }
                 } ?: MaterialTheme.colorScheme.primary,
                 shape = MaterialTheme.shapes.large
@@ -305,7 +305,7 @@ private fun TaskDueInText(
 }
 
 @Composable
-private fun TaskStaffAvatarList(
+fun TaskStaffAvatarList(
     modifier: Modifier = Modifier,
     staffList: List<Staff>
 ) {
