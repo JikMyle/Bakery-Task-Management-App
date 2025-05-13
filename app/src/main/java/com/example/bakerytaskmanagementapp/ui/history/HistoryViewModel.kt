@@ -43,7 +43,7 @@ class HistoryViewModel @Inject constructor(
 
                 _uiState.update { state ->
                     state.copy(
-                        taskHistoryList = historyItems
+                        taskHistoryList = historyItems.sortedByDescending { it.dateActionDone }
                     )
                 }
             }

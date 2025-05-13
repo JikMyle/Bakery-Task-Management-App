@@ -40,7 +40,7 @@ class TaskViewModel @Inject constructor(
         viewModelScope.launch {
             taskStore.getAllTasksWithAssignedStaff().collect { tasksWithStaff ->
                 _uiState.value = _uiState.value.copy(
-                    tasksWithStaff = tasksWithStaff
+                    tasksWithStaff = tasksWithStaff.sortedByDescending { it.task.isPriority }
                 )
             }
         }

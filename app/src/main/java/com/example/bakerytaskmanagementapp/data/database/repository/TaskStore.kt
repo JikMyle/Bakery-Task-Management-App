@@ -112,7 +112,15 @@ class LocalTaskStore @Inject constructor(
 
                 // Inserts an item in the [TaskHistory]
                 taskHistoryDao.addToHistory(
-                    generateTaskHistoryItem(it.task.id, it.task.title, TaskHistoryAction.UPDATED)
+                    generateTaskHistoryItem(
+                        it.task.id,
+                        it.task.title,
+                        if(it.task.status == TaskStatusType.COMPLETED) {
+                            TaskHistoryAction.COMPLETED
+                        } else {
+                            TaskHistoryAction.UPDATED
+                        }
+                    )
                 )
             }
         }
