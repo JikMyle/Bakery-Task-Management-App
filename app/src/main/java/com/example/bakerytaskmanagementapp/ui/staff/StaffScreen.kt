@@ -41,18 +41,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.bakerytaskmanagementapp.AdminAccessButton
 import com.example.bakerytaskmanagementapp.R
 import com.example.bakerytaskmanagementapp.data.database.OperationState
 import com.example.bakerytaskmanagementapp.data.database.model.Staff
-
+import com.example.bakerytaskmanagementapp.ui.AdminViewModel
 
 @Composable
 fun StaffScreen(
     modifier: Modifier = Modifier,
-    viewModel: StaffViewModel = hiltViewModel()
+    viewModel: StaffViewModel = hiltViewModel(),
+    adminViewModel: AdminViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    val uiState = viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val adminUiState by adminViewModel.adminUiState.collectAsStateWithLifecycle()
     val operationState by viewModel.operationState.collectAsStateWithLifecycle()
 
     // The following block is for displaying toast messages
@@ -70,8 +73,8 @@ fun StaffScreen(
         }
     }
 
-    if(uiState.value.isStaffFormVisible) {
-        StaffFormDialog(staffFormState = uiState.value.staffFormState)
+    if(uiState.isStaffFormVisible) {
+        StaffFormDialog(staffFormState = uiState.staffFormState)
     }
 
     Column(
@@ -92,16 +95,32 @@ fun StaffScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            AddStaffButton(onClick = {
-                viewModel.toggleStaffFormVisibility(true)
-            })
+            if(adminUiState.isAdmin) {
+                AddStaffButton(onClick = {
+                    viewModel.toggleStaffFormVisibility(true)
+                })
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            AdminAccessButton(
+                onClick = {
+                    if (adminUiState.isAdmin) {
+                        adminViewModel.toggleAdminMode()
+                    } else {
+                        adminViewModel.toggleAdminAccessDialogVisibility(true)
+                    }
+                },
+                isAdmin = adminUiState.isAdmin
+            )
         }
 
         StaffList(
             modifier = Modifier
                 .padding(top = 8.dp)
                 .fillMaxSize(),
-            staffList = uiState.value.staff,
+            staffList = uiState.staff,
+            isAdmin = adminUiState.isAdmin,
             onItemDeleteClick = viewModel::deleteStaff,
             onItemEditClick = viewModel::editStaff
         )
@@ -144,6 +163,7 @@ private fun AddStaffButton(
 private fun StaffList(
     modifier: Modifier = Modifier,
     staffList: List<Staff>,
+    isAdmin: Boolean,
     onItemEditClick: (Staff) -> Unit,
     onItemDeleteClick: (Staff) -> Unit,
 ) {
@@ -156,6 +176,7 @@ private fun StaffList(
             StaffListItem(
                 modifier = Modifier,
                 staff = staff,
+                isAdmin = isAdmin,
                 onItemEditClick = onItemEditClick,
                 onItemDeleteClick = onItemDeleteClick
             )
@@ -167,6 +188,7 @@ private fun StaffList(
 private fun StaffListItem(
     modifier: Modifier = Modifier,
     staff: Staff,
+    isAdmin: Boolean,
     onItemEditClick: (Staff) -> Unit = {},
     onItemDeleteClick: (Staff) -> Unit = {},
 ) {
@@ -194,24 +216,26 @@ private fun StaffListItem(
             // This [SPACER] is to separate the left and right contents
             Spacer(modifier.weight(1f))
 
-            IconButton(
-                onClick = { onItemEditClick(staff) }
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Edit,
-                    contentDescription =
-                        stringResource(R.string.edit_staff_button_content_description)
-                )
-            }
+            if(isAdmin) {
+                IconButton(
+                    onClick = { onItemEditClick(staff) }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription =
+                            stringResource(R.string.edit_staff_button_content_description)
+                    )
+                }
 
-            IconButton(
-                onClick = { onItemDeleteClick(staff) }
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Delete,
-                    contentDescription =
-                        stringResource(R.string.delete_staff_button_content_description)
-                )
+                IconButton(
+                    onClick = { onItemDeleteClick(staff) }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription =
+                            stringResource(R.string.delete_staff_button_content_description)
+                    )
+                }
             }
         }
     }

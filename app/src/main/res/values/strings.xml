@@ -1,5 +1,9 @@
 <resources>
     <string name="app_name">Bakery Task Management App</string>
+    <string name="inventory">Inventory</string>
+    <string name="staff">Staff</string>
+    <string name="tasks">Tasks</string>
+    <string name="history">History</string>
 
     <string name="manage_staff">Manage Staff</string>
     <string name="add_staff">Add Staff</string>
@@ -59,6 +63,11 @@
     <string name="assigned_staff">Assigned staff</string>
     <string name="assigned_staff_count">%1$d staff assigned</string>
     <string name="mark_as_done">Mark as done</string>
+
+    <string name="enable_admin_mode">Enable Admin Mode</string>
+    <string name="admin_password">Admin Password</string>
+    <string name="switch_to_admin_mode">Switch to Admin Mode</string>
+    <string name="switch_to_staff_mode">Switch to Staff Mode</string>
 
     <string name="more_options">More options</string>
     <string name="save">Save</string>

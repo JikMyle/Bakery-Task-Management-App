@@ -45,18 +45,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.bakerytaskmanagementapp.AdminAccessButton
 import com.example.bakerytaskmanagementapp.R
 import com.example.bakerytaskmanagementapp.data.database.OperationState
 import com.example.bakerytaskmanagementapp.data.database.model.InventoryItem
 import com.example.bakerytaskmanagementapp.data.database.model.MeasurementUnit
+import com.example.bakerytaskmanagementapp.ui.AdminViewModel
 
 @Composable
 fun InventoryScreen(
     modifier: Modifier = Modifier,
-    viewModel: InventoryViewModel = hiltViewModel()
+    viewModel: InventoryViewModel = hiltViewModel(),
+    adminViewModel: AdminViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
-    val uiState = viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val adminUiState by adminViewModel.adminUiState.collectAsStateWithLifecycle()
     val operationState by viewModel.operationState.collectAsStateWithLifecycle()
 
     // The following block is for displaying toast messages
@@ -74,9 +78,9 @@ fun InventoryScreen(
         }
     }
 
-    if(uiState.value.isItemFormVisible) {
+    if(uiState.isItemFormVisible) {
         ItemFormDialog(
-            itemFormState = uiState.value.itemFormState,
+            itemFormState = uiState.itemFormState,
             onValueChange = viewModel::updateItemFormState,
             onConfirm = viewModel::saveItem,
             onDismiss = {
@@ -105,13 +109,26 @@ fun InventoryScreen(
             AddItemButton(
                 onClick = { viewModel.toggleItemFormVisibility(true) }
             )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            AdminAccessButton(
+                onClick = {
+                    if (adminUiState.isAdmin) {
+                        adminViewModel.toggleAdminMode()
+                    } else {
+                        adminViewModel.toggleAdminAccessDialogVisibility(true)
+                    }
+                },
+                isAdmin = adminUiState.isAdmin
+            )
         }
 
         InventoryList (
             modifier = Modifier
                 .padding(top = 8.dp)
                 .fillMaxSize(),
-            itemList = uiState.value.items,
+            itemList = uiState.items,
             onItemDeleteClick = viewModel::deleteItem,
             onItemEditClick = viewModel::editItem
         )

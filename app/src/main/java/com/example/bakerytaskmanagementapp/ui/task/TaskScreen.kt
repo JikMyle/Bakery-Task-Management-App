@@ -74,12 +74,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.bakerytaskmanagementapp.AdminAccessButton
 import com.example.bakerytaskmanagementapp.R
 import com.example.bakerytaskmanagementapp.data.database.OperationState
 import com.example.bakerytaskmanagementapp.data.database.model.Staff
 import com.example.bakerytaskmanagementapp.data.database.model.Task
 import com.example.bakerytaskmanagementapp.data.database.model.TaskStatusType
 import com.example.bakerytaskmanagementapp.data.database.model.TaskWithAssignedStaff
+import com.example.bakerytaskmanagementapp.ui.AdminViewModel
 import com.example.bakerytaskmanagementapp.ui.staff.ProfileAvatar
 import com.example.bakerytaskmanagementapp.ui.util.drawVerticalScrollbar
 import java.text.SimpleDateFormat
@@ -91,10 +93,12 @@ import java.util.Locale
 @Composable
 fun TaskScreen(
     modifier: Modifier = Modifier,
-    viewModel: TaskViewModel = hiltViewModel()
+    viewModel: TaskViewModel = hiltViewModel(),
+    adminViewModel: AdminViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val uiState by  viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val adminUiState by adminViewModel.adminUiState.collectAsStateWithLifecycle()
     val operationState by viewModel.operationState.collectAsStateWithLifecycle()
 
     // The following block is for displaying toast messages
@@ -136,9 +140,24 @@ fun TaskScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            AddTaskButton{
-                viewModel.toggleEntryDialogVisibility(true)
+            if(adminUiState.isAdmin){
+                AddTaskButton{
+                    viewModel.toggleEntryDialogVisibility(true)
+                }
             }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            AdminAccessButton(
+                onClick = {
+                    if (adminUiState.isAdmin) {
+                        adminViewModel.toggleAdminMode()
+                    } else {
+                        adminViewModel.toggleAdminAccessDialogVisibility(true)
+                    }
+                },
+                isAdmin = adminUiState.isAdmin
+            )
         }
 
         TaskList(
@@ -146,6 +165,7 @@ fun TaskScreen(
                 .padding(top = 8.dp)
                 .fillMaxSize(),
             taskList = uiState.tasksWithStaff,
+            isAdmin = adminUiState.isAdmin,
             onItemTogglePriority = viewModel::toggleTaskPriority,
             onItemDeleteClick = viewModel::deleteTask,
             onItemEditClick = viewModel::editTask,
@@ -158,6 +178,7 @@ fun TaskScreen(
 private fun TaskList(
     modifier: Modifier = Modifier,
     taskList: List<TaskWithAssignedStaff>,
+    isAdmin: Boolean,
     onItemTogglePriority: (TaskWithAssignedStaff) -> Unit,
     onItemEditClick: (TaskWithAssignedStaff) -> Unit,
     onItemDeleteClick: (TaskWithAssignedStaff) -> Unit,
@@ -172,6 +193,7 @@ private fun TaskList(
             TaskListItem(
                 modifier = Modifier,
                 taskWithAssignedStaff = it,
+                isAdmin = isAdmin,
                 onItemTogglePriority = onItemTogglePriority,
                 onItemEditClick = onItemEditClick,
                 onItemDeleteClick = onItemDeleteClick,
@@ -185,6 +207,7 @@ private fun TaskList(
 private fun TaskListItem(
     modifier: Modifier = Modifier,
     taskWithAssignedStaff: TaskWithAssignedStaff,
+    isAdmin: Boolean,
     onItemTogglePriority: (TaskWithAssignedStaff) -> Unit,
     onItemEditClick: (TaskWithAssignedStaff) -> Unit,
     onItemDeleteClick: (TaskWithAssignedStaff) -> Unit,
@@ -211,6 +234,7 @@ private fun TaskListItem(
 
             IconButton(
                 onClick = { onItemTogglePriority(taskWithAssignedStaff) },
+                enabled = isAdmin
             ) {
                 // Filled yellow star for priority tasks
                 if(taskWithAssignedStaff.task.isPriority) {
@@ -258,11 +282,13 @@ private fun TaskListItem(
                 staffList = taskWithAssignedStaff.assignedStaff
             )
 
-            TaskListItemDropdownMenu(
-                onItemEditClick = { onItemEditClick(taskWithAssignedStaff) },
-                onItemDeleteClick = { onItemDeleteClick(taskWithAssignedStaff) },
-                onItemMarkAsDone = { onItemMarkAsDone(taskWithAssignedStaff) }
-            )
+            if(isAdmin) {
+                TaskListItemDropdownMenu(
+                    onItemEditClick = { onItemEditClick(taskWithAssignedStaff) },
+                    onItemDeleteClick = { onItemDeleteClick(taskWithAssignedStaff) },
+                    onItemMarkAsDone = { onItemMarkAsDone(taskWithAssignedStaff) }
+                )
+            }
         }
     }
 }

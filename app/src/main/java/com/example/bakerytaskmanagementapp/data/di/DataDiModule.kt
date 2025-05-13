@@ -18,6 +18,7 @@ import com.example.bakerytaskmanagementapp.data.database.repository.LocalTaskSto
 import com.example.bakerytaskmanagementapp.data.database.repository.StaffStore
 import com.example.bakerytaskmanagementapp.data.database.repository.TaskHistoryStore
 import com.example.bakerytaskmanagementapp.data.database.repository.TaskStore
+import com.example.bakerytaskmanagementapp.data.preferences.AdminDataStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -28,6 +29,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DataDiModule {
+    @Provides
+    @Singleton
+    fun provideAdminDataStore(
+        @ApplicationContext context: Context,
+    ): AdminDataStore = AdminDataStore(context)
+
     @Provides
     @Singleton
     fun provideDatabase(

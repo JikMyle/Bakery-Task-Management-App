@@ -12,37 +12,38 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.bakerytaskmanagementapp.AdminAccessButton
 import com.example.bakerytaskmanagementapp.R
 import com.example.bakerytaskmanagementapp.data.database.model.TaskHistory
 import com.example.bakerytaskmanagementapp.data.database.model.TaskHistoryAction
+import com.example.bakerytaskmanagementapp.ui.AdminViewModel
 import com.example.bakerytaskmanagementapp.ui.task.TaskStaffAvatarList
 import com.example.bakerytaskmanagementapp.ui.task.formatDate
 
 @Composable
 fun HistoryScreen(
     modifier: Modifier = Modifier,
-    viewModel: HistoryViewModel = hiltViewModel()
+    viewModel: HistoryViewModel = hiltViewModel(),
+    adminViewModel: AdminViewModel = hiltViewModel()
 ) {
-    val uiState = viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val adminUiState by adminViewModel.adminUiState.collectAsStateWithLifecycle()
 
     Column(
         modifier = modifier
@@ -61,13 +62,26 @@ fun HistoryScreen(
                 fontSize = MaterialTheme.typography.displayMedium.fontSize,
                 fontWeight = FontWeight.Bold
             )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            AdminAccessButton(
+                onClick = {
+                    if (adminUiState.isAdmin) {
+                        adminViewModel.toggleAdminMode()
+                    } else {
+                        adminViewModel.toggleAdminAccessDialogVisibility(true)
+                    }
+                },
+                isAdmin = adminUiState.isAdmin
+            )
         }
 
         HistoryList(
             modifier = Modifier
                 .padding(top = 8.dp)
                 .fillMaxSize(),
-            taskHistoryList = uiState.value.taskHistoryList,
+            taskHistoryList = uiState.taskHistoryList,
             onItemUndoClick = viewModel::undoTaskDelete
         )
     }

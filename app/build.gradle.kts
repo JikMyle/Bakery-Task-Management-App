@@ -5,6 +5,7 @@ plugins {
     id("androidx.room")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    kotlin("plugin.serialization") version "2.0.21"
 }
 
 android {
@@ -71,11 +72,15 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui.text.google.fonts)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.material3.adaptive.navigation.suite)
 
     // Jetpack Room Dependencies
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+
+    implementation(libs.androidx.datastore.preferences) // Preferences Datastore Dependency
 
     // Hilt Dependencies
     implementation(libs.hilt.android)
